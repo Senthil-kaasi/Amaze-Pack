@@ -29,7 +29,8 @@ export default function AddItem() {
       className="container col-md-4"
       id="AddItem"
       style={{
-        float: "right",
+        position: "fixed",
+        marginLeft: "63%",
         marginRight: "3%",
         marginTop: "-30px",
         borderRadius: "15px",
