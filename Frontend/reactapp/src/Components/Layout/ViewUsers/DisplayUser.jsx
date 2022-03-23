@@ -5,9 +5,11 @@ import { useUserCxt } from "../../assests/user-context";
 import EditUser from "./EditUser";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import classes from "./DisplayUser.module.css";
+import useHttp from "../../../hooks/use-http";
 
 const DisplayUser = () => {
   const userCxt = useUserCxt();
+  const { sendRequest: deleteRequest } = useHttp();
   const navigate = useNavigate();
   const [enteredValue, setEnteredValue] = useState("");
   const [user, setUser] = useState({});
@@ -30,13 +32,21 @@ const DisplayUser = () => {
     setEnteredValue(e.target.value);
   };
 
-  const deleteHandler = (userId) => {
+  const deleteData = (userId, data) => {
     userCxt.userDispatchFn({ type: "DELETE_USER", value: userId });
+  };
+
+  const deleteHandler = (userId) => {
+    const requestConfig = {
+      url: `https://localhost:5001/api/UserModel/deleteUser/${userId}`,
+      method: "DELETE",
+    };
+    deleteRequest(requestConfig, deleteData.bind(null, userId));
   };
 
   const usersList = userCxt.usersList
     .filter((item) => {
-      return item.userName.includes(enteredValue);
+      return item.username.includes(enteredValue) && item.role !== "admin";
     })
     .map((item, index) => {
       return (
@@ -46,6 +56,7 @@ const DisplayUser = () => {
         </div>
       );
     });
+
   if (usersList.length > 0) {
     element = usersList;
   } else {

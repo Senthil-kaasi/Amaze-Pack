@@ -5,12 +5,13 @@ import AdminNavBar from "../../UI/NavBar/AdminNavBar";
 import UserNavbar from "../../UI/NavBar/UserNavBar";
 import { useAuthCxt } from "../../assests/auth-context";
 
-function HomePage(props) {
+function HomePage() {
   const authCxt = useAuthCxt();
+  const { userInfo, isLogged } = authCxt;
   let navbar;
-  if (authCxt.isAdmin) {
+  if (isLogged && userInfo.userType === "admin") {
     navbar = <AdminNavBar />;
-  } else {
+  } else if (isLogged && userInfo.userType === "customer") {
     navbar = <UserNavbar />;
   }
   return (

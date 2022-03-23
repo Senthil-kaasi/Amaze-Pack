@@ -14,14 +14,14 @@ const Overlay = (props) => {
       <header className={classes.header}>Edit item</header>
       <div className={classes.details}>
         <div className={classes["img-div"]}>
-          <img className={classes.img} src={product.url} alt="item" />
+          <img className={classes.img} src={props.imageUrl} alt="item" />
         </div>
         <div className={classes.info}>
           <p>Product name: {product.productName}</p>
           <p>
             Quantiy: <span>{product.quantity}</span>ps
           </p>
-          <p>Total price: ${product.totalAmount}</p>
+          <p>Total price: ${product.totalPrice}</p>
         </div>
         <div className={classes.btns}>
           <button onClick={props.onDecrement}>-</button>
@@ -50,6 +50,7 @@ const ModalOverlay = (props) => {
       {ReactDom.createPortal(
         <Overlay
           product={props.productToBeShown}
+          imageUrl={props.imageUrl}
           onIncrement={props.onIncrement}
           onClose={props.onClose}
           onSave={props.onSave}

@@ -1,18 +1,7 @@
-import React, { useReducer, useContext } from "react";
+import React, { useReducer, useContext, useEffect } from "react";
+import useHttp from "../../hooks/use-http";
 
-// import PhotoFrame from "../../images/photot-frame.jfif";
-import AppleWatch from "../../images/Apple-watch.jfif";
-
-const orderItems = [
-  {
-    id: "product-1",
-    url: AppleWatch,
-    productName: "Watch I7",
-    price: "1000",
-    quantity: 2,
-    totalAmount: "2000",
-  },
-];
+const orderItems = [];
 
 // MyOrders context
 const MyOrdersContext = React.createContext({
@@ -23,12 +12,15 @@ const MyOrdersContext = React.createContext({
 // Reducer fn
 const myordersReducer = (prevState, action) => {
   let updatedArray;
-  if (action.type === "PLACE_ORDER") {
-    updatedArray = [action.value, ...prevState];
+  if (action.type === "GET_ORDERS") {
+    updatedArray = [...action.value];
+    return updatedArray;
+  } else if (action.type === "PLACE_ORDER") {
+    updatedArray = [{ ...action.value }, ...prevState];
     return updatedArray;
   } else if (action.type === "UPDATE_ORDER") {
     const exsistedItem = prevState.find((item) => {
-      return item.id === action.value.id;
+      return item.orderId === action.value.orderId;
     });
     const index = prevState.indexOf(exsistedItem);
     updatedArray = [...prevState];
@@ -37,7 +29,7 @@ const myordersReducer = (prevState, action) => {
   } else if (action.type === "CANCEL_ORDER") {
     updatedArray = [
       ...prevState.filter((item) => {
-        return item.id !== action.value;
+        return item.orderId !== action.value;
       }),
     ];
     return updatedArray;
@@ -47,10 +39,21 @@ const myordersReducer = (prevState, action) => {
 
 // MyOrdersContext Provider
 export const MyOrdersContextProvider = (props) => {
+  const { sendRequest: getOrdersRequest } = useHttp();
   const [myordersState, myordersDispatchFn] = useReducer(
     myordersReducer,
     orderItems
   );
+
+  useEffect(() => {
+    const transformData = (data) => {
+      myordersDispatchFn({ type: "GET_ORDERS", value: data });
+    };
+    const requestConfig = {
+      url: "https://localhost:5001/api/OrderModel/getOrder",
+    };
+    getOrdersRequest(requestConfig, transformData);
+  }, [getOrdersRequest]);
 
   return (
     <MyOrdersContext.Provider

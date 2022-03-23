@@ -14,7 +14,7 @@ const UserItem = (props) => {
       <div className={classes.content}>
         <div>
           <p>Username :</p>
-          <p>{user.userName}</p>
+          <p>{user.username}</p>
         </div>
         <div>
           <p>Email-id :</p>

@@ -1,39 +1,7 @@
-import React, { useReducer, useContext } from "react";
+import React, { useReducer, useContext, useEffect } from "react";
+import useHttp from "../../hooks/use-http";
 
-const usersDetailsList = [
-  {
-    userId: "user-1",
-    userName: "senthilkaasi",
-    email: "senthilkaasi3101@gmail.com",
-    mobileNumber: "9876543210",
-    password: "something3101",
-    userType: "customer",
-  },
-  {
-    userId: "user-2",
-    userName: "logesh",
-    email: "logesh@gmail.com",
-    mobileNumber: "1234567890",
-    password: "logesh@kiot",
-    userType: "customer",
-  },
-  {
-    userId: "user-3",
-    userName: "pavani",
-    email: "pavani@gmail.com",
-    mobileNumber: "7836546729",
-    password: "pavani@vvit",
-    userType: "customer",
-  },
-  {
-    userId: "user-4",
-    userName: "rakesh",
-    email: "rakesh@gmail.com",
-    mobileNumber: "9087653480",
-    password: "rakesh@mlrit",
-    userType: "customer",
-  },
-];
+const usersDetailsList = [];
 
 const UserContext = React.createContext({
   usersList: [],
@@ -42,10 +10,11 @@ const UserContext = React.createContext({
 
 const userReducer = (prevState, action) => {
   let updatedArray;
-  if (action.type === "ADD_USER") {
-    action.value.userId = `user-${prevState.length + 1}`;
-    action.value.userType = "customer";
-    const newUser = { ...action.value };
+  if (action.type === "GET_USERS") {
+    updatedArray = [...action.value];
+    return updatedArray;
+  } else if (action.type === "ADD_USER") {
+    const newUser = action.value;
     updatedArray = [...prevState, newUser];
     return updatedArray;
   } else if (action.type === "EDIT_USER") {
@@ -68,10 +37,26 @@ const userReducer = (prevState, action) => {
 };
 
 const UserContextProvider = (props) => {
+  const { isLoading, sendRequest: getUsers } = useHttp();
   const [usersList, userDispatchFn] = useReducer(userReducer, usersDetailsList);
+
+  useEffect(() => {
+    const transformData = (data) => {
+      userDispatchFn({ type: "GET_USERS", value: data });
+    };
+    const requestConfig = {
+      url: "https://localhost:5001/api/UserModel/getUser",
+    };
+    getUsers(requestConfig, transformData);
+  }, [getUsers]);
+
   return (
     <UserContext.Provider
-      value={{ usersList: usersList, userDispatchFn: userDispatchFn }}
+      value={{
+        usersList: usersList,
+        userDispatchFn: userDispatchFn,
+        isLoading: isLoading,
+      }}
     >
       {props.children}
     </UserContext.Provider>

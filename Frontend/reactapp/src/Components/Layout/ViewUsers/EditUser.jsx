@@ -5,10 +5,12 @@ import Card from "../../UI/Card";
 import userIcon from "../../../images/user-icon-2.jpg";
 import classes from "./EditUser.module.css";
 import { useUserCxt } from "../../assests/user-context";
+import useHttp from "../../../hooks/use-http";
 
 const Overlay = (props) => {
   const [user, setUser] = useState(props.user);
   const userCxt = useUserCxt();
+  const { sendRequest: editRequest } = useHttp();
 
   const changeHandler = (e) => {
     const { name, value } = e.target;
@@ -20,8 +22,21 @@ const Overlay = (props) => {
     });
   };
 
-  const saveHandler = () => {
+  const saveData = (user, data) => {
+    console.log(data);
     userCxt.userDispatchFn({ type: "EDIT_USER", value: user });
+  };
+
+  const saveHandler = () => {
+    const requestConfig = {
+      url: `https://localhost:5001/api/UserModel/editUser/${user.userId}`,
+      method: "PUT",
+      headers: {
+        "Content-type": "application/json",
+      },
+      body: user,
+    };
+    editRequest(requestConfig, saveData.bind(null, user));
     props.onClose();
   };
 
@@ -38,9 +53,9 @@ const Overlay = (props) => {
         </div>
         <div>
           <input
-            name="userName"
+            name="username"
             type="text"
-            value={user.userName}
+            value={user.username}
             onChange={changeHandler}
           />
           <input

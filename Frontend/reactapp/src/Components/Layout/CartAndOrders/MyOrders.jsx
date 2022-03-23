@@ -8,52 +8,96 @@ import ModalOverlay from "../../UI/ModalOverlay/ModalOverlay";
 import { useMyOrdersCxt } from "../../assests/myorders-context";
 import EmptyPage from "./Display/EmptyPage";
 import { useProductsCxt } from "../../assests/products-context";
+import { useAuthCxt } from "../../assests/auth-context";
+import useHttp from "../../../hooks/use-http";
 
 const MyOrders = () => {
   const navigate = useNavigate();
   const myordersCxt = useMyOrdersCxt();
+  const { sendRequest } = useHttp();
+  const authCxt = useAuthCxt();
   const productsCxt = useProductsCxt();
   const [haveToEditProduct, setHaveToEditProduct] = useState({});
-
+  const { productsList } = productsCxt;
   const { orderItems } = myordersCxt;
+  const [imageUrl, setImageUrl] = useState("");
   let element;
 
   const findTotalAmount = (quantity, price) => {
     return (quantity * price).toFixed(2);
   };
 
-  const openEditOverlayHandler = (productId) => {
-    const tempProduct = {
-      ...orderItems.find((item) => {
-        return productId === item.id;
+  const findProduct = (productId) => {
+    return {
+      ...productsList.find((item) => {
+        return productId === item.productId;
       }),
     };
+  };
+
+  const openEditOverlayHandler = (orderId) => {
+    const tempProduct = {
+      ...orderItems.find((item) => {
+        return orderId === item.orderId;
+      }),
+    };
+    const product = {
+      ...productsList.find((item) => {
+        return item.productId === tempProduct.productId;
+      }),
+    };
+    setImageUrl(product.imageUrl);
     setHaveToEditProduct(tempProduct);
-    navigate(`/myorders/${productId}`);
+    navigate(`/myorders/${orderId}`);
   };
 
   const closeEditOverlayHandler = () => {
     navigate("/myorders");
   };
 
-  const removeHandler = (productId, quantity) => {
+  const removeDataHandler = (orderId, data) => {
     myordersCxt.myordersDispatchFn({
       type: "CANCEL_ORDER",
-      value: productId,
-    });
-    productsCxt.productsDispatchFn({
-      type: "CANCEL_ORDER",
-      value: { id: productId, quantity: quantity },
+      value: orderId,
     });
     setTimeout(() => {
       alert("Your order canceled successfully :) ");
-    }, 400);
+    }, 300);
+  };
+
+  const updateProductDataHandler = (product, data) => {
+    productsCxt.productsDispatchFn({ type: "EDIT_PRODUCT", value: product });
+  };
+
+  const removeHandler = (orderId, productId, quantity) => {
+    const requestConfig = {
+      url: `https://localhost:5001/api/OrderModel/deleteOrder/${orderId}`,
+      method: "DELETE",
+    };
+    sendRequest(
+      requestConfig,
+      removeDataHandler.bind(null, orderId, productId, quantity)
+    );
+    const product = findProduct(productId);
+    product.quantity = String(Number(product.quantity) + quantity);
+    const updateRequestConfig = {
+      url: `https://localhost:5001/api/ProductModel/admin/productEdit/${productId}`,
+      method: "PUT",
+      headers: {
+        "Content-type": "application/json",
+      },
+      body: product,
+    };
+    sendRequest(
+      updateRequestConfig,
+      updateProductDataHandler.bind(null, product)
+    );
   };
 
   const increceProductQuantity = () => {
     const tempProduct = { ...haveToEditProduct };
     tempProduct.quantity += 1;
-    tempProduct.totalAmount = findTotalAmount(
+    tempProduct.totalPrice = findTotalAmount(
       tempProduct.quantity,
       tempProduct.price
     );
@@ -64,18 +108,22 @@ const MyOrders = () => {
     const tempProduct = { ...haveToEditProduct };
     if (tempProduct.quantity > 1) {
       tempProduct.quantity -= 1;
-      tempProduct.totalAmount = findTotalAmount(
+      tempProduct.totalPrice = findTotalAmount(
         tempProduct.quantity,
         tempProduct.price
       );
       setHaveToEditProduct(tempProduct);
     } else {
-      removeHandler(haveToEditProduct.id);
+      removeHandler(
+        tempProduct.orderId,
+        tempProduct.productId,
+        tempProduct.quantity
+      );
       closeEditOverlayHandler();
     }
   };
 
-  const saveHandler = () => {
+  const updateDataHandler = (haveToEditProduct, data) => {
     myordersCxt.myordersDispatchFn({
       type: "UPDATE_ORDER",
       value: haveToEditProduct,
@@ -83,27 +131,44 @@ const MyOrders = () => {
     closeEditOverlayHandler();
   };
 
-  const items = orderItems.map((item, index) => {
-    return (
-      <div key={`product${index + 1}`}>
-        <CartItem
-          id={item.id}
-          productName={item.productName}
-          totalAmount={item.totalAmount}
-          quantity={item.quantity}
-          onOpen={openEditOverlayHandler}
-          onCancel={removeHandler}
-        />
-        <hr />
-      </div>
-    );
-  });
+  const saveHandler = () => {
+    const requestConfig = {
+      url: `https://localhost:5001/api/OrderModel/editOrder/${haveToEditProduct.orderId}`,
+      method: "PUT",
+      headers: {
+        "Content-type": "application/json",
+      },
+      body: haveToEditProduct,
+    };
+    sendRequest(requestConfig, updateDataHandler.bind(null, haveToEditProduct));
+  };
+
+  const items = orderItems
+    .filter((item) => {
+      return item.userId === authCxt.userInfo.userId;
+    })
+    .map((item, index) => {
+      return (
+        <div key={`product${index + 1}`}>
+          <CartItem
+            orderId={item.orderId}
+            productId={item.productId}
+            productName={item.productName}
+            totalPrice={item.totalPrice}
+            quantity={item.quantity}
+            onOpen={openEditOverlayHandler}
+            onCancel={removeHandler}
+          />
+          <hr />
+        </div>
+      );
+    });
 
   const gotoCartHandler = () => {
     navigate("/cart");
   };
 
-  if (orderItems.length > 0) {
+  if (items.length > 0) {
     element = <Display items={items} />;
   } else {
     element = (
@@ -111,6 +176,7 @@ const MyOrders = () => {
         message="No Orders Found :("
         btnText="Go to Cart."
         onClick={gotoCartHandler}
+        hasNeed={true}
       />
     );
   }
@@ -123,6 +189,7 @@ const MyOrders = () => {
           element={
             <ModalOverlay
               productToBeShown={haveToEditProduct}
+              imageUrl={imageUrl}
               onIncrement={increceProductQuantity}
               onClose={closeEditOverlayHandler}
               onSave={saveHandler}

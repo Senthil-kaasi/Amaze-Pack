@@ -2,28 +2,47 @@ import React from "react";
 import { useState } from "react";
 import { MdModeEdit } from "react-icons/md";
 import { useProductsCxt } from "../assests/products-context";
+import useHttp from "../../hooks/use-http";
 
-export default function EditPage({ item, onEditProduct, cou }) {
+export default function EditPage({ item, cou }) {
+  const { sendRequest: editRequest } = useHttp();
   const productsCxt = useProductsCxt();
-  const [editImage, setEditImage] = useState(item.url);
+  const [editImage, setEditImage] = useState(item.imageUrl);
   const [editProductName, setEditProductName] = useState(item.productName);
   const [editCost, setEditCost] = useState(item.price);
   const [editQuantity, setEditQuantity] = useState(item.quantity);
+  const [editDescription, setEditDescription] = useState(item.description);
 
-  const onEdit = (e) => {
-    e.preventDefault();
-    const updatedProduct = {
-      id: item.id,
-      url: editImage,
-      productName: editProductName,
-      price: editCost,
-      quantity: editQuantity,
-    };
+  const editData = (updatedProduct, data) => {
+    // console.log(data);
     productsCxt.productsDispatchFn({
       type: "EDIT_PRODUCT",
       value: updatedProduct,
     });
-    alert("Product deatails edited successfully!");
+    setTimeout(() => {
+      alert("Product deatails edited successfully!");
+    }, 300);
+  };
+
+  const onEdit = (e) => {
+    e.preventDefault();
+    const updatedProduct = {
+      productId: item.productId,
+      imageUrl: editImage,
+      productName: editProductName,
+      price: editCost,
+      quantity: editQuantity,
+      description: editDescription,
+    };
+    const requestConfig = {
+      url: `https://localhost:5001/api/ProductModel/admin/productEdit/${item.productId}`,
+      method: "PUT",
+      headers: {
+        "Content-type": "application/json",
+      },
+      body: updatedProduct,
+    };
+    editRequest(requestConfig, editData.bind(null, updatedProduct));
   };
 
   return (
@@ -75,7 +94,7 @@ export default function EditPage({ item, onEditProduct, cou }) {
                     type="text"
                     className="form-control"
                     placeholder="enter the product image url"
-                    defaultValue={item.url}
+                    defaultValue={item.imageUrl}
                     onChange={(e) => setEditImage(e.target.value)}
                   />
                 </div>
@@ -87,6 +106,16 @@ export default function EditPage({ item, onEditProduct, cou }) {
                     placeholder="enter the product quantity"
                     defaultValue={item.quantity}
                     onChange={(e) => setEditQuantity(e.target.value)}
+                  />
+                </div>
+                <div className="mb-3">
+                  <label>Product Description</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="enter the product description"
+                    defaultValue={item.description}
+                    onChange={(e) => setEditDescription(e.target.value)}
                   />
                 </div>
               </div>

@@ -11,10 +11,12 @@ import classes from "./Signup.module.css";
 import Button from "../UI/Button";
 
 import { useUserCxt } from "../assests/user-context";
+import useHttp from "../../hooks/use-http";
+import useGenerateId from "../../hooks/generate-id";
 
 const intialValues = {
   email: "",
-  userName: "",
+  username: "",
   mobileNumber: "",
   password: "",
   password1: "",
@@ -23,6 +25,8 @@ const intialValues = {
 const Signup = () => {
   const userCxt = useUserCxt();
   const navigate = useNavigate();
+  const generateId = useGenerateId();
+  const { sendRequest: postRequest } = useHttp();
   const [formValues, setFormValues] = useState(intialValues);
   const [formErrors, setFormErrors] = useState({ intialValues });
   // const [isSubmit, setIsSubmit] = useState(false);
@@ -33,12 +37,24 @@ const Signup = () => {
   };
 
   const createUserObj = (value) => {
-    const tempUser = {};
-    tempUser.email = value.email;
-    tempUser.userName = value.userName;
-    tempUser.mobileNumber = value.mobileNumber;
-    tempUser.password = value.password;
+    const tempUser = {
+      userId: generateId("U"),
+      username: value.username,
+      email: value.email,
+      mobileNumber: value.mobileNumber,
+      password: value.password,
+      active: true,
+      role: "customer",
+    };
     return tempUser;
+  };
+
+  const createUser = (userData, data) => {
+    console.log(data);
+    userCxt.userDispatchFn({
+      type: "ADD_USER",
+      value: { ...userData },
+    });
   };
 
   const handleSubmit = (e) => {
@@ -46,29 +62,27 @@ const Signup = () => {
     const errs = validate(formValues);
     const errsKey = Object.keys(errs);
     if (errsKey.length === 0) {
-      userCxt.userDispatchFn({
-        type: "ADD_USER",
-        value: createUserObj(formValues),
-      });
+      const userData = createUserObj(formValues);
+      const requestConfig = {
+        url: "https://localhost:5001/api/UserModel/addUser",
+        method: "POST",
+        headers: {
+          "Content-type": "application/json",
+        },
+        body: userData,
+      };
+      postRequest(requestConfig, createUser.bind(null, userData));
       navigate("/login");
     } else {
       setFormErrors(errs);
     }
-    // setIsSubmit(true);
   };
-
-  // useEffect(() => {
-  //   console.log(formErrors);
-  //   if (Object.keys(formErrors).Length === 0 && isSubmit) {
-  //     console.log(formValues);
-  //   }
-  // }, [formErrors, formValues, isSubmit]);
 
   const validate = (values) => {
     const errors = {};
     const regex = /^[^\s@]+@[^\s@]+\. [^\s@]{2,}$/i;
-    if (!values.userName.trim()) {
-      errors.userName = "Username is required!";
+    if (!values.username.trim()) {
+      errors.username = "Username is required!";
     }
     if (!values.email) {
       errors.email = "E-mail is required!";
@@ -119,12 +133,12 @@ const Signup = () => {
                 <Form.Control
                   type="text"
                   placeholder="Enter Username"
-                  name="userName"
-                  value={formValues.userName}
+                  name="username"
+                  value={formValues.username}
                   onChange={handleChange}
                 />
               </Form.Group>
-              <p>{formErrors.userName}</p>
+              <p>{formErrors.username}</p>
 
               <Form.Group className="mb-3" controlId="formBasicMobileNumber">
                 <Form.Control

@@ -9,33 +9,24 @@ import classes from "./Login.module.css";
 import img1 from "../../images/Signup-image.png";
 import { useUserCxt } from "../assests/user-context";
 import { useAuthCxt } from "../assests/auth-context";
+import useHttp from "../../hooks/use-http";
 
-const Login = (props) => {
+const Login = () => {
   const [isError, setisError] = useState(false);
   const Userid = useRef();
   const Password = useRef();
+  const { sendRequest } = useHttp();
   const userCxt = useUserCxt();
   const authCxt = useAuthCxt();
   const navigate = useNavigate();
 
-  const checkAdmin = (userid, password) => {
-    if (userid === "Admin@gmail.com" && password === "admin") {
-      authCxt.loginHandler();
-      authCxt.changeAdminHandler(true);
-      navigate("/addProduct");
-      return true;
-    }
-    return false;
-  };
+  const loginDataHandler = (data) => {};
 
   const onSubmit = (event) => {
     event.preventDefault();
     setisError(false);
     const userid = Userid.current.value;
     const password = Password.current.value;
-    if (checkAdmin(userid, password)) {
-      return;
-    }
     if (!(userid && password)) {
       setisError(true);
       return;
@@ -46,8 +37,24 @@ const Login = (props) => {
         }),
       };
       if (password === tempUser.password) {
-        authCxt.loginHandler();
-        navigate("/home");
+        authCxt.loginHandler(tempUser.userId, tempUser.role);
+        if (tempUser.role === "admin") {
+          navigate("/addProduct");
+        } else {
+          navigate("/home");
+        }
+        const requestConfig = {
+          url: "https://localhost:5001/user/Login",
+          method: "POST",
+          headers: {
+            "Content-type": "application/json",
+          },
+          body: {
+            email: userid,
+            password: password,
+          },
+        };
+        sendRequest(requestConfig, loginDataHandler);
       } else {
         alert("Username or password is wrong");
       }
