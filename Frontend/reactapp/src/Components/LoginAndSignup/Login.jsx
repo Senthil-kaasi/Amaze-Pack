@@ -10,6 +10,7 @@ import img1 from "../../images/Signup-image.png";
 import { useUserCxt } from "../assests/user-context";
 import { useAuthCxt } from "../assests/auth-context";
 import useHttp from "../../hooks/use-http";
+import useGenerateId from "../../hooks/generate-id";
 
 const Login = () => {
   const [isError, setisError] = useState(false);
@@ -19,6 +20,7 @@ const Login = () => {
   const userCxt = useUserCxt();
   const authCxt = useAuthCxt();
   const navigate = useNavigate();
+  const generateId = useGenerateId();
 
   const loginDataHandler = (data) => {};
 
@@ -50,6 +52,7 @@ const Login = () => {
             "Content-type": "application/json",
           },
           body: {
+            loginId: generateId("l"),
             email: userid,
             password: password,
           },
