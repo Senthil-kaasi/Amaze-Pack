@@ -69,13 +69,17 @@ namespace Amazepack_Project.Model
 
             modelBuilder.Entity<LoginModel>(entity =>
             {
-                entity.HasKey(e => e.Email)
-                    .HasName("PK__LoginMod__AB6E616528203A49");
+                entity.HasKey(e => e.LoginId)
+                    .HasName("PK__LoginMod__1F5EF4CF2EDA44C9");
 
                 entity.ToTable("LoginModel");
 
+                entity.Property(e => e.LoginId)
+                    .HasMaxLength(30)
+                    .HasColumnName("loginId");
+
                 entity.Property(e => e.Email)
-                    .HasMaxLength(50)
+                    .HasMaxLength(30)
                     .HasColumnName("email");
 
                 entity.Property(e => e.Password)
